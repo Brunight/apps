@@ -340,6 +340,7 @@ const loader = async (
         url,
         map,
         term,
+        fq,
         filtersBehavior,
         props.ignoreCaseSelected,
       )
