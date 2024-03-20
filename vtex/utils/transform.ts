@@ -646,6 +646,7 @@ export const legacyFacetToFilter = (
   url: URL,
   map: string,
   term: string,
+  fq: string[],
   behavior: "dynamic" | "static",
   ignoreCaseSelected?: boolean,
 ): Filter | null => {
@@ -656,10 +657,12 @@ export const legacyFacetToFilter = (
   );
 
   const mapSet = new Set(
-    mapSegments.map((i) => ignoreCaseSelected ? i.toLowerCase() : i),
+    ignoreCaseSelected ? mapSegments.map((i) => i.toLowerCase()) : mapSegments,
   );
   const pathSet = new Set(
-    pathSegments.map((i) => ignoreCaseSelected ? i.toLowerCase() : i),
+    ignoreCaseSelected
+      ? pathSegments.map((i) => i.toLowerCase())
+      : pathSegments,
   );
 
   // for productClusterIds, we have to use the full path
@@ -667,8 +670,9 @@ export const legacyFacetToFilter = (
   // category2/123?map=c,productClusterIds -> DO NOT WORK
   // category1/category2/123?map=c,c,productClusterIds -> WORK
   const hasProductClusterIds = mapSegments.includes("productClusterIds");
-  const hasToBeFullpath = hasProductClusterIds || mapSegments.includes("ft") ||
-    mapSegments.includes("b");
+  const hasBrand = mapSegments.includes("b");
+  const hasToBeFullpath = hasProductClusterIds || hasBrand ||
+    mapSegments.includes("ft");
 
   const getLink = (facet: LegacyFacet, selected: boolean) => {
     const index = pathSegments.findIndex((s) => {
@@ -679,19 +683,42 @@ export const legacyFacetToFilter = (
       return s === facet.Value;
     });
 
-    const map = hasToBeFullpath
-      ? facet.Link.split("map=")[1].split(",")
-      : [facet.Map];
-    const value = hasToBeFullpath
-      ? facet.Link.split("?")[0].slice(1).split("/")
-      : [facet.Value];
+    const currentFacetMap = facet.Link.split("map=")[1].split(",");
+    const currentFacetValue = facet.Link.split("?")[0].slice(1).split("/");
+    const alreadyHasCategory = mapSegments.includes("c");
+    const categoryQuantityInMap = mapSegments.filter((s) => s === "c").length;
+    const categoryQuantityInCurrentFacetMap =
+      currentFacetMap.filter((s) => s === "c").length;
+    const isAddingCategory = currentFacetMap[categoryQuantityInMap] === "c";
+    const useFullPath = hasToBeFullpath ||
+      (!alreadyHasCategory && isAddingCategory);
 
-    const pathSegmentsFiltered = hasProductClusterIds
-      ? [pathSegments[mapSegments.indexOf("productClusterIds")]]
-      : [];
-    const mapSegmentsFiltered = hasProductClusterIds
-      ? ["productClusterIds"]
-      : [];
+    const map = useFullPath ? currentFacetMap : [facet.Map];
+    const value = useFullPath ? currentFacetValue : [facet.Value];
+
+    const { pathSegmentsFiltered = [], mapSegmentsFiltered = [] } =
+      hasProductClusterIds || hasBrand
+        ? pathSegments.reduce(
+          (acc, segment, i) => {
+            if (i === index) {
+              return acc;
+            }
+
+            if (
+              mapSegments[i] === "productClusterIds" || mapSegments[i] === "b"
+            ) {
+              acc.pathSegmentsFiltered.push(segment);
+              acc.mapSegmentsFiltered.push(mapSegments[i]);
+            }
+
+            return acc;
+          },
+          {
+            pathSegmentsFiltered: [] as string[],
+            mapSegmentsFiltered: [] as string[],
+          },
+        )
+        : {};
 
     const _mapSegments = hasToBeFullpath ? mapSegmentsFiltered : mapSegments;
     const _pathSegments = hasToBeFullpath ? pathSegmentsFiltered : pathSegments;
@@ -714,17 +741,40 @@ export const legacyFacetToFilter = (
       zipped.splice(i, 0, [newMap[it], newPath[it]]);
     }
 
-    const link = new URL(`/${zipped.map(([, s]) => s).join("/")}`, url);
-    link.searchParams.set("map", zipped.map(([m]) => m).join(","));
+    const zippedMap = zipped.map(([m]) => m).join(",");
+    const link = new URL(`/${zipped.map(([, s]) => s).join("/") || "s"}`, url);
+    link.searchParams.set("map", zippedMap);
     if (behavior === "static") {
-      link.searchParams.set(
-        "fmap",
-        url.searchParams.get("fmap") || mapSegments.join(","),
-      );
+      const oldFmap = url.searchParams.get("fmap");
+      const fmap = oldFmap || mapSegments.join(",") ||
+        (hasToBeFullpath ? undefined : zippedMap);
+      if (fmap && zippedMap) {
+        const quantityOfCategoriesToPrepend =
+          (alreadyHasCategory && isAddingCategory)
+            ? categoryQuantityInCurrentFacetMap - categoryQuantityInMap
+            : 0;
+        const categoriesToPrepend = Array.from({
+          length: quantityOfCategoriesToPrepend,
+        }, () => "c").join(",");
+
+        link.searchParams.set(
+          "fmap",
+          (alreadyHasCategory && isAddingCategory)
+            ? `${categoriesToPrepend},${fmap}`
+            : fmap,
+        );
+      } else {
+        link.searchParams.delete("fmap");
+      }
     }
     const currentQuery = url.searchParams.get("q");
     if (currentQuery) {
       link.searchParams.set("q", currentQuery);
+    }
+
+    const productClusterIdInFq = fq.find((f) => f.startsWith("H:"));
+    if (productClusterIdInFq) {
+      link.searchParams.set("fq", productClusterIdInFq);
     }
 
     return `${link.pathname}${link.search}`;
@@ -764,6 +814,7 @@ export const legacyFacetToFilter = (
             url,
             map,
             term,
+            fq,
             behavior,
           )
           : undefined,
