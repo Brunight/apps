@@ -105,6 +105,7 @@ const IS_TO_LEGACY: Record<string, LegacySort> = {
   "price:asc": "OrderByPriceASC",
   "orders:desc": "OrderByTopSaleDESC",
   "name:desc": "OrderByNameDESC",
+  "name:asc": "OrderByNameASC",
   "release:desc": "OrderByReleaseDateDESC",
   "discount:desc": "OrderByBestDiscountDESC",
   "relevance:desc": "OrderByScoreDESC",
