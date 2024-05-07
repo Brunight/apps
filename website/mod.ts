@@ -7,6 +7,9 @@ import type { Props as Seo } from "./components/Seo.tsx";
 import { Routes } from "./flags/audience.ts";
 import manifest, { Manifest } from "./manifest.gen.ts";
 import { Page } from "deco/blocks/page.tsx";
+import { TextReplace } from "./handlers/proxy.ts";
+import { Script } from "./types.ts";
+import { Matcher } from "deco/blocks/matcher.ts";
 
 export type AppContext = FnContext<Props, Manifest>;
 
@@ -32,6 +35,30 @@ export type CacheDirective = StaleWhileRevalidate | MaxAge;
 export interface Caching {
   enabled?: boolean;
   directives?: CacheDirective[];
+}
+
+export interface AbTesting {
+  enabled?: boolean;
+  /**
+   * @description The name of the A/B test, it will be appear at cookie
+   */
+  name?: string;
+  matcher?: Matcher;
+  /**
+   * @description The url to run the A/B test against, eg: secure.mywebsite.com.br
+   */
+  urlToRunAgainst?: string;
+  /**
+   * @description Strings to replace in the response, for example, to replace absolute urls at HTML
+   */
+  replaces?: TextReplace[];
+  /**
+   * @title Scripts to include
+   * @description Scripts to include in the head of the page proxied
+   */
+  includeScriptsToHead?: {
+    includes?: Script[];
+  };
 }
 
 export interface Props {
@@ -73,6 +100,18 @@ export interface Props {
    * @default false
    */
   firstByteThresholdMS?: boolean;
+
+  /**
+   * @title Avoid redirecting to editor
+   * @description Disable going to editor when "." or "Ctrl + Shift + E" is pressed
+   */
+  avoidRedirectingToEditor?: boolean;
+
+  /**
+   * @title AB Testing
+   * @description A/B Testing configuration
+   */
+  abTesting?: AbTesting;
 }
 
 /**
@@ -121,10 +160,41 @@ export default function App({ theme, ...state }: Props): App<Manifest, Props> {
     resolvables: {
       "./routes/[...catchall].tsx": {
         __resolveType: "website/handlers/router.ts",
+        audiences: [
+          ...(state.abTesting ? getAbTestAudience(state.abTesting) : []),
+        ],
       },
     },
   };
 }
+
+const getAbTestAudience = (abTesting: AbTesting) => {
+  const handler = {
+    value: {
+      url: abTesting.urlToRunAgainst,
+      __resolveType: "website/handlers/proxy.ts",
+      customHeaders: [],
+      includeScriptsToHead: abTesting.includeScriptsToHead,
+      replaces: abTesting.replaces,
+    },
+  };
+
+  if (abTesting.enabled) {
+    return [{
+      name: abTesting.name,
+      routes: [
+        {
+          handler,
+          pathTemplate: "/*",
+          highPriority: true,
+        },
+      ],
+      matcher: abTesting.matcher,
+      __resolveType: "website/flags/audience.ts",
+    }];
+  }
+  return [];
+};
 
 const deferPropsResolve = (routes: Routes): Routes => {
   if (Array.isArray(routes)) {
@@ -143,7 +213,7 @@ const deferPropsResolve = (routes: Routes): Routes => {
 };
 
 export const onBeforeResolveProps = <
-  T extends { routes?: Routes[]; errorPage?: Page },
+  T extends { routes?: Routes[]; errorPage?: Page; abTesting: AbTesting },
 >(
   props: T,
 ): T => {
@@ -152,6 +222,9 @@ export const onBeforeResolveProps = <
       ...props,
       errorPage: props.errorPage
         ? asResolved(props.errorPage, true)
+        : undefined,
+      abTesting: props.abTesting
+        ? asResolved(props.abTesting, false)
         : undefined,
       routes: props.routes.map(deferPropsResolve),
     };

@@ -6,13 +6,10 @@ import {
 } from "../../../../website/utils/crypto.ts";
 import { ignoreIfExists } from "../../common/objects.ts";
 import { k8s } from "../../deps.ts";
-import {
-  NODE_LABELS_KEY,
-  NODE_LABELS_VALUES,
-  NodeSelector,
-} from "../../loaders/siteState/get.ts";
 import { AppContext, PREVIEW_SERVICE_SCALING } from "../../mod.ts";
 import { DECO_SITES_PVC } from "../build.ts";
+
+const EFS_VOLUME_HANDLE_ID = Deno.env.get("EFS_VOLUME_HANDLE_ID") ?? "";
 
 export interface Props {
   site: string;
@@ -72,17 +69,6 @@ const getOrGenerateAESKey = async (site: string) => {
   }
 };
 
-export const defineNodeSelectorRules = (_site: string): NodeSelector => {
-  // TODO: Replace this for actual rules, now we just need to isolate new sites from prod sites because of the PH
-  const nodeLabelDecoEvent = NODE_LABELS_KEY.DECO_EVENT;
-  const nodeValueProductHunt =
-    NODE_LABELS_VALUES[nodeLabelDecoEvent].PRODUCT_HUNT;
-
-  return {
-    [nodeLabelDecoEvent]: nodeValueProductHunt,
-  };
-};
-
 /**
  * Provision namespace of the new site and required resources.
  * @title Create Site
@@ -133,20 +119,31 @@ export default async function newSite(
   const [secretEnvVar] = await Promise.all([
     secretEnvVarPromise,
     ...setupPromises,
+    corev1Api.createPersistentVolume({
+      metadata: { name: `pv-${siteNs}` },
+      spec: {
+        accessModes: ["ReadWriteMany"],
+        storageClassName: EFS_SC,
+        persistentVolumeReclaimPolicy: "Retain",
+        capacity: { storage: "5Gi" },
+        csi: {
+          driver: "efs.csi.aws.com",
+          volumeHandle: EFS_VOLUME_HANDLE_ID,
+        },
+      },
+    }),
     corev1Api.createNamespacedPersistentVolumeClaim(siteNs, {
       metadata: { name: DECO_SITES_PVC, namespace: siteNs },
       spec: {
         accessModes: ["ReadWriteMany"],
         storageClassName: EFS_SC,
         resources: { requests: { storage: "5Gi" } }, // since this should be EFS the size doesn't matter.
+        volumeName: `pv-${siteNs}`,
       },
     }).catch(ignoreIfExists),
   ]);
 
-  const nodeSelector = defineNodeSelectorRules(site);
-
   const state = {
-    nodeSelector,
     ...isEphemeral ? { scaling: PREVIEW_SERVICE_SCALING } : {},
     envVars: [secretEnvVar],
   };
