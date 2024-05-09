@@ -109,31 +109,40 @@ const loader = async (
   const productFormat = "complete";
 
   if (searchTerm) {
-    const response = await api["GET /engage/search/v3/search"]({
-      apiKey,
-      origin,
-      salesChannel,
-      deviceId,
-      allowRedirect,
-      showOnlyAvailable,
-      resultsPerPage,
-      page,
-      sortBy,
-      filter,
-      source,
-      terms: searchTerm,
-      userId,
-      productFormat,
-    }).then((res) => res.json());
+    try {
+      const response = await api["GET /engage/search/v3/search"]({
+        apiKey,
+        origin,
+        salesChannel,
+        deviceId,
+        allowRedirect,
+        showOnlyAvailable,
+        resultsPerPage,
+        page,
+        sortBy,
+        filter,
+        source,
+        terms: searchTerm,
+        userId,
+        productFormat,
+      }).then((res) => res.json());
 
-    return toProductListingPage(
-      response,
-      page,
-      resultsPerPage,
-      req.url,
-      response.searchId,
-      cdn,
-    );
+      return toProductListingPage(
+        response,
+        page,
+        resultsPerPage,
+        req.url,
+        response.searchId,
+        cdn,
+      );
+    } catch (err) {
+      if (err.message.includes(`"message":"Query not found"`)) {
+        return null;
+      }
+
+      console.error(err);
+      return null;
+    }
   } else if (category.length > 0 || multicategory.length > 0) {
     const response = await api["GET /engage/search/v3/navigates"]({
       apiKey,
