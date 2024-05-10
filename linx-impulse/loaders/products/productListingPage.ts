@@ -1,4 +1,5 @@
 import type { Person, ProductListingPage } from "../../../commerce/types.ts";
+import { nullOnNotFound } from "../../../utils/http.ts";
 import type { AppContext } from "../../mod.ts";
 import { getDeviceIdFromBag } from "../../utils/deviceId.ts";
 import getSource from "../../utils/source.ts";
@@ -124,7 +125,12 @@ const loader = async (
       terms: searchTerm,
       userId,
       productFormat,
-    }).then((res) => res.json());
+    }).then((res) => res.json())
+      .catch(nullOnNotFound);
+
+    if (!response) {
+      return null;
+    }
 
     return toProductListingPage(
       response,
