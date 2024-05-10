@@ -1,8 +1,10 @@
+import { SectionProps } from "deco/types.ts";
 import {
   Person,
   ProductDetailsPage,
   ProductListingPage,
 } from "../../../commerce/types.ts";
+import { scriptAsDataURI } from "../../../utils/dataURI.ts";
 import { AppContext } from "../../mod.ts";
 import getSource from "../../utils/source.ts";
 import type { LinxUser } from "../../utils/types/analytics.ts";
@@ -102,6 +104,11 @@ interface UserProfile {
   page: string;
 }
 
+interface SendViewEventParams {
+  page: Page | string;
+  body?: Record<string, any>;
+}
+
 interface Props {
   /**
    * @title Event
@@ -122,12 +129,12 @@ interface Props {
 }
 
 /** @title Linx Impulse Integration - Events */
-export const loader = async (props: Props, req: Request, ctx: AppContext) => {
-  const { event } = props;
-  const page = event.page as Page;
+export const script = async (props: SectionProps<typeof loader>) => {
+  const { event, source, apiKey, salesChannel, url: urlStr } = props;
+  if (!event) return;
 
-  const url = new URL(req.url);
-  const source = getSource(ctx);
+  const { page } = event;
+
   const user: LinxUser | undefined = props.user
     ? {
       id: props.user["@id"] ?? props.user.email ?? "",
@@ -139,6 +146,30 @@ export const loader = async (props: Props, req: Request, ctx: AppContext) => {
       birthday: undefined,
     }
     : undefined;
+
+  const commonBody = {
+    apiKey,
+    source,
+    user,
+    salesChannel,
+  };
+
+  const sendViewEvent = (params: SendViewEventParams) => {
+    const baseUrl = new URL(
+      `https://api.event.linximpulse.net/v7/events/views/${params.page}`,
+    );
+
+    return fetch(baseUrl.toString(), {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ ...params.body, ...commonBody }),
+    });
+  };
+
+  const url = new URL(urlStr);
 
   switch (page) {
     case "category": {
@@ -156,34 +187,52 @@ export const loader = async (props: Props, req: Request, ctx: AppContext) => {
         }
       }
 
-      await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-        event: "view",
-        params: {
-          page,
-          source,
-          user,
+      const categories = url.pathname.slice(1).split("/");
+
+      await sendViewEvent({
+        page: categories.length === 1 ? "category" : "subcategory",
+        body: {
+          categories,
           searchId,
-          categories: url.pathname.slice(1).split("/"),
         },
       });
+
+      // await ctx.invoke["linx-impulse"].actions.analytics.`sendEvent`({
+      //   event: "view",
+      //   params: {
+      //     page,
+      //     source,
+      //     user,
+      //   },
+      // });
       break;
     }
     case "product": {
       if (!("details" in event) || !event.details) break;
       const { details } = event;
 
-      await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-        event: "view",
-        params: {
-          page,
-          source,
-          user,
+      await sendViewEvent({
+        page,
+        body: {
           pid: details.product.isVariantOf?.productGroupID ??
             details.product.productID,
           price: details.product.offers?.lowPrice,
           sku: details.product.sku,
         },
       });
+
+      // await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
+      //   event: "view",
+      //   params: {
+      //     page,
+      //     source,
+      //     user,
+      //     pid: details.product.isVariantOf?.productGroupID ??
+      //       details.product.productID,
+      //     price: details.product.offers?.lowPrice,
+      //     sku: details.product.sku,
+      //   },
+      // });
       break;
     }
     case "search": {
@@ -206,33 +255,56 @@ export const loader = async (props: Props, req: Request, ctx: AppContext) => {
         });
       });
 
-      await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-        event: "view",
-        params: {
-          page,
-          source,
-          user,
+      await sendViewEvent({
+        page,
+        body: {
           query,
           items,
           searchId,
         },
       });
+
+      // await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
+      //   event: "view",
+      //   params: {
+      //     page,
+      //     source,
+      //     user,
+      //     query,
+      //     items,
+      //     searchId,
+      //   },
+      // });
       break;
     }
     default: {
-      await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-        event: "view",
-        params: {
-          page,
-          source,
-          user,
-        },
+      await sendViewEvent({
+        page,
       });
+      // await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
+      //   event: "view",
+      //   params: {
+      //     page,
+      //     source,
+      //     user,
+      //   },
+      // });
       break;
     }
   }
 };
 
-export default function LinxImpulsePageView() {
-  return null;
+/** @title Linx Impulse - Page View Events */
+export const loader = (props: Props, req: Request, ctx: AppContext) => ({
+  ...props,
+  apiKey: ctx.apiKey,
+  salesChannel: ctx.salesChannel,
+  source: getSource(ctx),
+  url: req.url,
+});
+
+export default function LinxImpulsePageView(
+  props: SectionProps<typeof loader>,
+) {
+  return <script defer src={scriptAsDataURI(script, props)} />;
 }
