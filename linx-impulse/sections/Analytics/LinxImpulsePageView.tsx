@@ -236,21 +236,20 @@ export const script = async (props: SectionProps<typeof loader>) => {
       break;
     }
     case "search": {
-      if (!("result" in event) || !event.result) break;
-      const { result } = event;
-
       const query = url.searchParams.get("q") ??
         url.pathname.split("/").pop() ?? "";
 
-        if (!result.products?.length) {
-          return sendViewEvent({
-            page: "emptysearch",
-            body: {
-              query,
-              items: []
-            },
-          });
-        }
+      if (!("result" in event) || !event.result) {
+        return sendViewEvent({
+          page: "emptysearch",
+          body: {
+            query,
+            items: [],
+          },
+        });
+      }
+
+      const { result } = event;
 
       let searchId: string | undefined;
       const items = result.products.map((product) => {
