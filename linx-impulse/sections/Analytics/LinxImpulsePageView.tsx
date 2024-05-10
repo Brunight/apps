@@ -306,5 +306,14 @@ export const loader = (props: Props, req: Request, ctx: AppContext) => ({
 export default function LinxImpulsePageView(
   props: SectionProps<typeof loader>,
 ) {
-  return <script defer src={scriptAsDataURI(script, props)} />;
+  return (
+    <div>
+      <script defer src={scriptAsDataURI(script, props)} />
+      <span class="hidden">
+        {"details" in props.event && props.event.details?.product?.productID}
+        {"result" in props.event && props.event.result?.products?.length}
+        {"products" in props.event && props.event.products?.products?.length}
+      </span>
+    </div>
+  );
 }
