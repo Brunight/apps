@@ -242,6 +242,16 @@ export const script = async (props: SectionProps<typeof loader>) => {
       const query = url.searchParams.get("q") ??
         url.pathname.split("/").pop() ?? "";
 
+        if (!result.products?.length) {
+          return sendViewEvent({
+            page: "emptysearch",
+            body: {
+              query,
+              items: []
+            },
+          });
+        }
+
       let searchId: string | undefined;
       const items = result.products.map((product) => {
         if (!searchId) {
