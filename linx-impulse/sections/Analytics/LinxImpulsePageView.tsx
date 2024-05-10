@@ -153,7 +153,7 @@ export const script = async (props: SectionProps<typeof loader>) => {
       `https://api.event.linximpulse.net/v7/events/views/${params.page}`,
     );
 
-    deviceId && baseUrl.searchParams.append("deviceId", deviceId);
+    // deviceId && baseUrl.searchParams.append("deviceId", deviceId);
 
     return fetch(baseUrl.toString(), {
       method: "POST",
@@ -165,6 +165,7 @@ export const script = async (props: SectionProps<typeof loader>) => {
         apiKey,
         source,
         user,
+        deviceId,
         salesChannel,
         ...params.body,
       }),
