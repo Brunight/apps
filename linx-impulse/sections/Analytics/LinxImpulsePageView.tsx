@@ -8,6 +8,7 @@ import { scriptAsDataURI } from "../../../utils/dataURI.ts";
 import { AppContext } from "../../mod.ts";
 import getSource from "../../utils/source.ts";
 import type { LinxUser } from "../../utils/types/analytics.ts";
+import { getDeviceIdFromBag } from "../../utils/deviceId.ts";
 
 type Page =
   | "home"
@@ -130,7 +131,7 @@ interface Props {
 
 /** @title Linx Impulse Integration - Events */
 export const script = async (props: SectionProps<typeof loader>) => {
-  const { event, source, apiKey, salesChannel, url: urlStr } = props;
+  const { event, source, apiKey, salesChannel, url: urlStr, deviceId } = props;
   if (!event) return;
 
   const { page } = event;
@@ -147,17 +148,12 @@ export const script = async (props: SectionProps<typeof loader>) => {
     }
     : undefined;
 
-  const commonBody = {
-    apiKey,
-    source,
-    user,
-    salesChannel,
-  };
-
   const sendViewEvent = (params: SendViewEventParams) => {
     const baseUrl = new URL(
       `https://api.event.linximpulse.net/v7/events/views/${params.page}`,
     );
+
+    deviceId && baseUrl.searchParams.append("deviceId", deviceId);
 
     return fetch(baseUrl.toString(), {
       method: "POST",
@@ -165,7 +161,13 @@ export const script = async (props: SectionProps<typeof loader>) => {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ ...params.body, ...commonBody }),
+      body: JSON.stringify({
+        apiKey,
+        source,
+        user,
+        salesChannel,
+        ...params.body,
+      }),
     });
   };
 
@@ -310,6 +312,7 @@ export const loader = (props: Props, req: Request, ctx: AppContext) => ({
   salesChannel: ctx.salesChannel,
   source: getSource(ctx),
   url: req.url,
+  deviceId: getDeviceIdFromBag(ctx),
 });
 
 export default function LinxImpulsePageView(
