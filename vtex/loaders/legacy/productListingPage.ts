@@ -225,6 +225,10 @@ const loader = async (
 
   const fmap = url.searchParams.get("fmap") ?? map;
   const args = { map, _from, _to, O, ft, fq };
+	const fArgs = {
+		...args,
+		fq: fq.filter((f) => !f.toLowerCase().startsWith('p:['))
+	}
 
   const [vtexProductsResponse, vtexFacets] = await Promise.all([
     vcsDeprecated["GET /api/catalog_system/pub/products/search/:term?"](
@@ -238,7 +242,7 @@ const loader = async (
     vcsDeprecated["GET /api/catalog_system/pub/facets/search/:term"](
       {
         ...params,
-        ...args,
+        ...fArgs,
         term: getTerm(term, fmap),
         map: fmap,
       },
