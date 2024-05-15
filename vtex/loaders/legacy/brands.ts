@@ -1,4 +1,5 @@
 import { Brand } from "../../../commerce/types.ts";
+import { STALE } from "../../../utils/fetch.ts";
 import { AppContext } from "../../mod.ts";
 import { toBrand } from "../../utils/transform.ts";
 
@@ -12,7 +13,7 @@ interface Props {
 /**
  * @title VTEX Brand List - Legacy
  */
-const loaders = async (
+const loader = async (
   props: Props,
   _req: Request,
   ctx: AppContext,
@@ -22,9 +23,16 @@ const loaders = async (
 
   const brands = await vcsDeprecated["GET /api/catalog_system/pub/brand/list"](
     {},
+    { ...STALE }
   )
     .then((r) => r.json())
-    .catch(() => null);
+    .catch((error) => {
+      if (error.status === 404) {
+        return null;
+      }
+    
+      throw error;
+    });
 
   if (!brands) {
     return null;
@@ -37,4 +45,6 @@ const loaders = async (
   return brands.map(toBrand);
 };
 
-export default loaders;
+export const cache = "stale-while-revalidate";
+
+export default loader;
