@@ -56,6 +56,19 @@ export interface Props {
 
 const getSortFromQuery = (query: string): SortBy | undefined => {
   switch (query) {
+    case "relevance:desc":
+      return "relevance";
+    case "price:desc":
+      return "descPrice";
+    case "price:asc":
+      return "ascPrice";
+    case "orders:desc":
+      return "descSold";
+    case "release:desc":
+      return "descDate";
+    case "discount:desc":
+      return "descDiscount";
+
     case "relevance":
     case "pid":
     case "ascPrice":
@@ -67,6 +80,9 @@ const getSortFromQuery = (query: string): SortBy | undefined => {
     case "descReview":
     case "descDiscount":
       return query;
+
+    case "name:desc":
+    case "name:asc":
     default:
       return undefined;
   }
