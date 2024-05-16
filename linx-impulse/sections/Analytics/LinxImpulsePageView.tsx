@@ -191,20 +191,33 @@ export const script = async (props: SectionProps<typeof loader>) => {
     return searchIdInPageTypes?.replace("SearchId:", "");
   };
 
+  const getCategoriesFromPage = (page: ProductListingPage) => {
+    if (page.breadcrumb.itemListElement.length) {
+      return page.breadcrumb.itemListElement.map((item) => item.name!);
+    } else {
+      const departmentsFilter = page.filters.find((filter) =>
+        filter.key === "Departments"
+      )?.values;
+      if (Array.isArray(departmentsFilter)) {
+        return departmentsFilter.map((value) => value.label);
+      }
+    }
+  };
+
   const url = new URL(urlStr);
 
   switch (page) {
     case "category": {
-      const searchId = getSearchIdFromPageInfo(
-        "products" in event && event.products
-          ? event.products.pageInfo
-          : undefined,
-      );
+      let searchId: string | undefined;
+      let categories: string[] | undefined;
 
-      const categories = url.pathname.slice(1).split("/");
+      if ("products" in event && event.products) {
+        searchId = getSearchIdFromPageInfo(event.products.pageInfo);
+        categories = getCategoriesFromPage(event.products);
+      }
 
       await sendViewEvent({
-        page: categories.length === 1 ? "category" : "subcategory",
+        page: (categories?.length ?? 1) === 1 ? "category" : "subcategory",
         body: {
           categories,
           searchId,
@@ -214,16 +227,18 @@ export const script = async (props: SectionProps<typeof loader>) => {
       break;
     }
     case "subcategory": {
-      const searchId = getSearchIdFromPageInfo(
-        "products" in event && event.products
-          ? event.products.pageInfo
-          : undefined,
-      );
+      let searchId: string | undefined;
+      let categories: string[] | undefined;
+
+      if ("products" in event && event.products) {
+        searchId = getSearchIdFromPageInfo(event.products.pageInfo);
+        categories = getCategoriesFromPage(event.products);
+      }
 
       await sendViewEvent({
         page: "subcategory",
         body: {
-          // categories,
+          categories,
           searchId,
         },
       });
@@ -265,8 +280,6 @@ export const script = async (props: SectionProps<typeof loader>) => {
           },
         });
       }
-
-      event.result.pageInfo;
 
       const { result } = event;
 
