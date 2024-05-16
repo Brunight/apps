@@ -21,8 +21,9 @@ export const middleware = (
         value: cookie,
         name: DEVICE_ID_COOKIE_NAME,
         path: "/",
-        secure: true,
-        httpOnly: true,
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        // secure: true,
+        // httpOnly: true,
       });
     }
 
