@@ -14,6 +14,7 @@ import { getDeviceIdFromBag } from "../../utils/deviceId.ts";
 type Page =
   | "home"
   | "category"
+  | "subcategory"
   | "product"
   | "search"
   | "checkout"
@@ -27,6 +28,15 @@ interface Category {
   /**
    * @hide
    * @default category
+   */
+  page: string;
+  products: ProductListingPage | null;
+}
+
+interface Subcategory {
+  /**
+   * @hide
+   * @default subcategory
    */
   page: string;
   products: ProductListingPage | null;
@@ -119,6 +129,7 @@ interface Props {
   event:
     | Home
     | Category
+    | Subcategory
     | Product
     | Search
     | Other
@@ -183,7 +194,6 @@ export const script = async (props: SectionProps<typeof loader>) => {
   const url = new URL(urlStr);
 
   switch (page) {
-    case "subcategory":
     case "category": {
       const searchId = getSearchIdFromPageInfo(
         "products" in event && event.products
@@ -197,6 +207,23 @@ export const script = async (props: SectionProps<typeof loader>) => {
         page: categories.length === 1 ? "category" : "subcategory",
         body: {
           categories,
+          searchId,
+        },
+      });
+
+      break;
+    }
+    case "subcategory": {
+      const searchId = getSearchIdFromPageInfo(
+        "products" in event && event.products
+          ? event.products.pageInfo
+          : undefined,
+      );
+
+      await sendViewEvent({
+        page: "subcategory",
+        body: {
+          // categories,
           searchId,
         },
       });
@@ -257,6 +284,21 @@ export const script = async (props: SectionProps<typeof loader>) => {
           items,
           searchId,
         },
+      });
+
+      break;
+    }
+
+    case "landingpage": {
+      await sendViewEvent({
+        page: "landing_page",
+      });
+
+      break;
+    }
+    case "notfound": {
+      await sendViewEvent({
+        page: "not_found",
       });
 
       break;
