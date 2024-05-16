@@ -103,10 +103,13 @@ const loader = async (
   }
 
   const { resultsPerPage, allowRedirect, showOnlyAvailable, user } = props;
-  const { apiKey, origin, salesChannel, api, cdn } = ctx;
+  const { apiKey, salesChannel, api, cdn } = ctx;
   const deviceId = getDeviceIdFromBag(ctx);
   const source = getSource(ctx);
   const url = new URL(req.url);
+
+  const origin = url.searchParams.get("origin") || ctx.origin;
+  const ranking = url.searchParams.get("ranking") || undefined;
 
   const category = props.categories && props.categories.length > 0
     ? props.categories
@@ -148,6 +151,7 @@ const loader = async (
       terms: searchTerm,
       userId,
       productFormat,
+      ranking,
     }).then((res) => res.json())
       .catch((error) => {
         if (error.status === 404) {
@@ -188,6 +192,7 @@ const loader = async (
       source,
       userId,
       productFormat,
+      ranking,
       ...(multicategory.length > 0 ? { multicategory } : { category }),
     }).then((res) => res.json());
 
