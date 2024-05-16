@@ -85,3 +85,9 @@ export interface HotsiteResponse {
   filters: Filter[];
   products: Product[];
 }
+
+export interface NotFoundResponse {
+  searchId: string;
+  code: number;
+  message: string;
+}

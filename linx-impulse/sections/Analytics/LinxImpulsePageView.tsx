@@ -1,5 +1,6 @@
 import { SectionProps } from "deco/types.ts";
 import {
+  PageInfo,
   Person,
   ProductDetailsPage,
   ProductListingPage,
@@ -172,23 +173,23 @@ export const script = async (props: SectionProps<typeof loader>) => {
     });
   };
 
+  const getSearchIdFromPageInfo = (pageInfo?: PageInfo | null) => {
+    const searchIdInPageTypes = pageInfo?.pageTypes?.find((
+      pageType,
+    ) => pageType?.startsWith("SearchId:"));
+    return searchIdInPageTypes?.replace("SearchId:", "");
+  };
+
   const url = new URL(urlStr);
 
   switch (page) {
+    case "subcategory":
     case "category": {
-      let searchId: string | undefined;
-
-      if ("products" in event && event.products) {
-        for (const product of event.products.products ?? []) {
-          searchId = product.isVariantOf?.additionalProperty?.find((p) =>
-            p.name === "searchId"
-          )?.value;
-
-          if (searchId) {
-            break;
-          }
-        }
-      }
+      const searchId = getSearchIdFromPageInfo(
+        "products" in event && event.products
+          ? event.products.pageInfo
+          : undefined,
+      );
 
       const categories = url.pathname.slice(1).split("/");
 
@@ -200,14 +201,6 @@ export const script = async (props: SectionProps<typeof loader>) => {
         },
       });
 
-      // await ctx.invoke["linx-impulse"].actions.analytics.`sendEvent`({
-      //   event: "view",
-      //   params: {
-      //     page,
-      //     source,
-      //     user,
-      //   },
-      // });
       break;
     }
     case "product": {
@@ -224,43 +217,33 @@ export const script = async (props: SectionProps<typeof loader>) => {
         },
       });
 
-      // await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-      //   event: "view",
-      //   params: {
-      //     page,
-      //     source,
-      //     user,
-      //     pid: details.product.isVariantOf?.productGroupID ??
-      //       details.product.productID,
-      //     price: details.product.offers?.lowPrice,
-      //     sku: details.product.sku,
-      //   },
-      // });
       break;
     }
     case "search": {
+      const searchId = getSearchIdFromPageInfo(
+        "result" in event && event.result ? event.result.pageInfo : undefined,
+      );
       const query = url.searchParams.get("q") ??
         url.pathname.split("/").pop() ?? "";
 
-      if (!("result" in event) || !event.result) {
+      if (
+        (!("result" in event) || !event.result) || !event.result.products.length
+      ) {
         return sendViewEvent({
           page: "emptysearch",
           body: {
             query,
             items: [],
+            searchId,
           },
         });
       }
 
+      event.result.pageInfo;
+
       const { result } = event;
 
-      let searchId: string | undefined;
       const items = result.products.map((product) => {
-        if (!searchId) {
-          searchId = product.isVariantOf?.additionalProperty?.find((p) =>
-            p.name === "searchId"
-          )?.value;
-        }
         return ({
           pid: product.isVariantOf?.productGroupID ?? product.productID,
           sku: product.sku,
@@ -276,31 +259,13 @@ export const script = async (props: SectionProps<typeof loader>) => {
         },
       });
 
-      // await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-      //   event: "view",
-      //   params: {
-      //     page,
-      //     source,
-      //     user,
-      //     query,
-      //     items,
-      //     searchId,
-      //   },
-      // });
       break;
     }
     default: {
       await sendViewEvent({
         page,
       });
-      // await ctx.invoke["linx-impulse"].actions.analytics.sendEvent({
-      //   event: "view",
-      //   params: {
-      //     page,
-      //     source,
-      //     user,
-      //   },
-      // });
+
       break;
     }
   }

@@ -1,6 +1,7 @@
 import type {
   Filter,
   Offer,
+  PageType,
   Person,
   Product,
   ProductListingPage,
@@ -26,6 +27,7 @@ import type {
 import type {
   HotsiteResponse,
   NavigateResponse,
+  NotFoundResponse,
   Query,
   SearchResponse,
 } from "./types/search.ts";
@@ -504,13 +506,50 @@ export const sortOptions: { value: SortBy; label: string }[] = [
 ];
 
 export const toProductListingPage = (
-  response: NavigateResponse | SearchResponse | HotsiteResponse,
+  response:
+    | NavigateResponse
+    | SearchResponse
+    | HotsiteResponse
+    | NotFoundResponse
+    | null,
   page: number,
   resultsPerPage: number,
   url: string,
-  searchId: string,
   cdn?: string,
+  pageType?: "Search" | "Category" | "SubCategory",
 ): ProductListingPage => {
+  const searchId = response?.searchId;
+
+  const searchIdAsPageType = searchId
+    ? `SearchId:${searchId}` as any
+    : undefined;
+
+  const pageTypes: PageType[] = [];
+  pageType && pageTypes.push(pageType);
+  searchIdAsPageType && pageTypes.push(searchIdAsPageType);
+
+  if (!response || "code" in response) {
+    return {
+      "@type": "ProductListingPage",
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [],
+        numberOfItems: 0,
+      },
+      filters: [],
+      products: [],
+      pageInfo: {
+        nextPage: undefined,
+        previousPage: undefined,
+        currentPage: page,
+        records: 0,
+        recordPerPage: 0,
+        pageTypes,
+      },
+      sortOptions,
+    };
+  }
+
   const { nextPage, previousPage } = generatePages(page, url);
 
   return {
@@ -523,19 +562,20 @@ export const toProductListingPage = (
     sortOptions,
     products: response.products.map((p) =>
       toProduct(
-        { ...p, details: { ...p.details, searchId } },
+        searchId ? { ...p, details: { ...p.details, searchId } } : p,
         new URL(url).origin,
         cdn,
       )
-    ),
+    ) ?? [],
     pageInfo: {
       currentPage: page,
       nextPage,
       previousPage,
-      records: response.size,
+      records: response.size ?? 0,
       recordPerPage: resultsPerPage,
+      pageTypes,
     },
-    filters: response.filters.map((f) => toFilter(f, new URL(url))),
+    filters: response.filters.map((f) => toFilter(f, new URL(url))) ?? [],
   };
 };
 

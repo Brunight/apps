@@ -5,6 +5,7 @@ import { getDeviceIdFromBag } from "../../utils/deviceId.ts";
 import getSource from "../../utils/source.ts";
 import { sortOptions, toProductListingPage } from "../../utils/transform.ts";
 import type { SortBy } from "../../utils/types/linx.ts";
+import { NotFoundResponse } from "../../utils/types/search.ts";
 
 export interface Props {
   /**
@@ -108,6 +109,12 @@ const loader = async (
   const filter = url.searchParams.getAll("filter");
   const userId = user?.["@id"];
   const productFormat = "complete";
+  const categories = url.pathname.slice(1).split("/");
+  const pageType = searchTerm
+    ? "Search"
+    : categories.length === 1
+    ? "Category"
+    : "SubCategory";
 
   if (searchTerm) {
     const response = await api["GET /engage/search/v3/search"]({
@@ -126,19 +133,28 @@ const loader = async (
       userId,
       productFormat,
     }).then((res) => res.json())
-      .catch(nullOnNotFound);
+      .catch((error) => {
+        if (error.status === 404) {
+          const errorData = JSON.parse(error.message);
+          try {
+            if (errorData) {
+              return errorData as NotFoundResponse;
+            }
+          } catch {
+            return null;
+          }
+        }
 
-    if (!response) {
-      return null;
-    }
+        throw error;
+      });
 
     return toProductListingPage(
       response,
       page,
       resultsPerPage,
       req.url,
-      response.searchId,
       cdn,
+      pageType,
     );
   } else if (category.length > 0 || multicategory.length > 0) {
     const response = await api["GET /engage/search/v3/navigates"]({
@@ -164,8 +180,8 @@ const loader = async (
       page,
       resultsPerPage,
       req.url,
-      response.searchId,
       cdn,
+      pageType,
     );
   } else {
     return {
