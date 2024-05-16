@@ -288,6 +288,7 @@ export default function LinxImpulsePageView(
     <div>
       <script defer src={scriptAsDataURI(script, props)} />
       <span class="hidden">
+        {!!props.user?.email && "user ok"}
         {"details" in props.event && props.event.details?.product?.productID}
         {"result" in props.event && props.event.result?.products?.length}
         {"products" in props.event && props.event.products?.products?.length}
