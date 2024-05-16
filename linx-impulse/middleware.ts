@@ -21,7 +21,16 @@ export const middleware = (
         value: cookie,
         name: DEVICE_ID_COOKIE_NAME,
         path: "/",
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+        // secure: true,
+        // httpOnly: true,
+      });
+
+      setCookie(ctx.response.headers, {
+        value: cookie,
+        name: "nav_id",
+        path: "/",
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
         // secure: true,
         // httpOnly: true,
       });
