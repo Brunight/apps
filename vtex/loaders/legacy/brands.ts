@@ -23,14 +23,14 @@ const loader = async (
 
   const brands = await vcsDeprecated["GET /api/catalog_system/pub/brand/list"](
     {},
-    { ...STALE }
+    { ...STALE },
   )
     .then((r) => r.json())
     .catch((error) => {
       if (error.status === 404) {
         return null;
       }
-    
+
       throw error;
     });
 
