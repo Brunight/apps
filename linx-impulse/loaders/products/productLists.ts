@@ -121,6 +121,15 @@ const generateParams = (
         };
       }
 
+      // use breadcrumb entries as categoryIds
+      if (props.loader?.breadcrumb.itemListElement.length) {
+        return {
+          name: "category",
+          "categoryId[]": props.loader.breadcrumb.itemListElement
+            .map((item) => item.name!),
+        };
+      }
+
       const properties = props.loader?.products
         .flatMap((p) => p?.additionalProperty)
         .filter(nonNullable) ?? [];
