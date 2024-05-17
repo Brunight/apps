@@ -6,6 +6,7 @@ import {
 } from "../../utils/types/analytics.ts";
 import { Source } from "../../utils/types/linx.ts";
 import { getDeviceIdFromBag } from "../../utils/deviceId.ts";
+import getSource from "../../utils/source.ts";
 
 interface CategoryParams {
   page: "category";
@@ -119,6 +120,7 @@ const action = async (
     origin,
   } = ctx;
   const deviceId = getDeviceIdFromBag(ctx);
+  const source = getSource(ctx)
 
   switch (event) {
     case "view": {
@@ -227,11 +229,11 @@ const action = async (
       }
 
       // Impulse event click
-      const { source, user } = params;
+      const { source: paramsSource, user } = params;
       await api["GET /engage/search/v3/clicks"]({
         apiKey,
         trackingId,
-        source,
+        source: paramsSource ?? source,
         userId: user?.id,
         interactionType,
         deviceId,

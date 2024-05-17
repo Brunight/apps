@@ -107,8 +107,9 @@ const loader = async (
   const source = getSource(ctx);
   const url = new URL(req.url);
 
-  const origin = url.searchParams.get("origin") || ctx.origin;
+  const origin = url.searchParams.get("origin") || undefined;
   const ranking = url.searchParams.get("ranking") || undefined;
+  const p = url.searchParams.get("p") || undefined;
 
   const category = props.categories && props.categories.length > 0
     ? props.categories
@@ -151,6 +152,7 @@ const loader = async (
       userId,
       productFormat,
       ranking,
+      p,
     }).then((res) => res.json())
       .catch((error) => {
         if (error.status === 404) {
@@ -192,6 +194,7 @@ const loader = async (
       userId,
       productFormat,
       ranking,
+      p,
       ...(multicategory.length > 0 ? { multicategory } : { category }),
     }).then((res) => res.json());
 
