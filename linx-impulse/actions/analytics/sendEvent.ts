@@ -120,7 +120,7 @@ const action = async (
     origin,
   } = ctx;
   const deviceId = getDeviceIdFromBag(ctx);
-  const source = getSource(ctx)
+  const source = getSource(ctx);
 
   switch (event) {
     case "view": {
