@@ -86,6 +86,7 @@ export interface LinxAPI {
       userId?: string;
       source?: Source;
       ranking?: string;
+      p?: string;
     };
   };
 
@@ -108,6 +109,7 @@ export interface LinxAPI {
       productFormat?: ProductFormat;
       userId?: string;
       source?: Source;
+      p?: string;
     };
   };
 
