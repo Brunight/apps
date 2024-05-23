@@ -201,6 +201,12 @@ const loader = async (
   const pageTypes = getValidTypesFromPageTypes(allPageTypes);
   const pageType = pageTypes.at(-1) || pageTypes[0];
 
+  const invalidSegmentIndex = allPageTypes.findIndex((pg) =>
+    pg.pageType === "NotFound"
+  );
+  const invalidSegment =
+    maybeTerm.split("/").filter(Boolean)[invalidSegmentIndex];
+
   const missingParams = typeof maybeMap !== "string" || !maybeTerm;
   const [map, term] = missingParams && fq.length > 0
     ? ["", ""]
@@ -215,7 +221,7 @@ const loader = async (
   const ftFallback = getTermFallback(url, isPage, hasFilters);
 
   const ft = props.ft || url.searchParams.get("ft") ||
-    url.searchParams.get("q") || ftFallback;
+    url.searchParams.get("q") || ftFallback || invalidSegment;
 
   const isInSeachFormat = ft;
 
@@ -388,7 +394,17 @@ const loader = async (
       currentPage,
       records: parseInt(_total, 10),
       recordPerPage: count,
-      pageTypes: allPageTypes.map(parsePageType),
+      pageTypes: allPageTypes.map((pg, i) => {
+        const parsed = parsePageType(pg);
+
+        if (parsed !== "Unknown") {
+          return parsed;
+        }
+
+        return (i === invalidSegmentIndex && invalidSegment === ft)
+          ? "Search"
+          : "Unknown";
+      }),
     },
     sortOptions,
     seo: pageTypesToSeo(
