@@ -397,6 +397,8 @@ export const toProduct = (
     return productFromImpulse(product, origin, product.selectedSku, cdn, level);
   }
 
+  console.log(product.trackingUrl)
+
   return productFromChaordic(product, origin, undefined, cdn, level);
 };
 
