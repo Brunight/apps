@@ -221,7 +221,7 @@ const action = async (
       // Chaordic event click
       if (interactionType === "SHELF_CLICK") {
         await chaordicApi["GET /v0/click"]({
-          trackingId: trackingId,
+          trackingId,
           apiKey,
           deviceId,
         });
