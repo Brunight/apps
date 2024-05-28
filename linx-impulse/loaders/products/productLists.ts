@@ -21,6 +21,7 @@ interface BaseProps {
    * @hide
    */
   page: PageName;
+  showDummyProducts?: boolean;
   showOnlyAvailable?: boolean;
 }
 
@@ -214,6 +215,9 @@ const loader = async (
   const deviceId = getDeviceIdFromBag(ctx);
   const source = getSource(ctx);
 
+  const url = new URL(req.url);
+  const dummy = url.searchParams.get("dummy") || undefined;
+
   const params = generateParams(props, req);
   const headers = new Headers();
   if (origin) {
@@ -229,13 +233,16 @@ const loader = async (
       salesChannel,
       showOnlyAvailable,
       productFormat: "complete",
+      dummy: props.showDummyProducts || (dummy === "true" || dummy === "1")
+        ? true
+        : undefined,
     }, {
       headers,
       // TODO: This is a temporary fix for the async rendering issue (https://discord.com/channels/985687648595243068/1236027748674306078)
       signal: new AbortController().signal,
     }).then((res) => res.json());
 
-  const reqOrigin = new URL(req.url).origin;
+  const reqOrigin = url.origin;
 
   return [
     ...top.map((shelf) => toLinxImpulseShelf(shelf, "top", reqOrigin, cdn)),
