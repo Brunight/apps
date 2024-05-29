@@ -18,6 +18,7 @@ export type PageName =
   | "userprofile"
   | "not_found"
   | "search"
+  | "emptysearch"
   | "landing_page"
   | "other";
 
