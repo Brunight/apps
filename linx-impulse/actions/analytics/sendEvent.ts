@@ -65,6 +65,7 @@ interface ViewEvent {
       | OtherParams
     )
     & {
+      userId?: string;
       user?: LinxUser;
       source: Source;
     };
@@ -74,11 +75,13 @@ interface ClickEventParams {
   trackingId: string;
   source: Source;
   user?: LinxUser;
+  userId?: string;
   interactionType?: "PRODUCT_VIEW" | "ADD_TO_CART";
 }
 
 interface ChaordicClickEventParams {
   trackingId: string;
+  userId?: string;
   interactionType: "SHELF_CLICK";
 }
 
@@ -99,6 +102,8 @@ interface ImpressionEvent {
      * @description Contains the position of the last product shown in the visible area of the product shelf
      */
     lastOffset: number;
+
+    userId?: string;
   };
 }
 
@@ -124,11 +129,12 @@ const action = async (
 
   switch (event) {
     case "view": {
-      const { page, source, user } = params;
+      const { page, source, user, userId } = params;
       const commonBody = {
         apiKey,
         source,
         user,
+        userId,
         salesChannel,
         deviceId,
       };
@@ -216,7 +222,7 @@ const action = async (
       break;
     }
     case "click": {
-      const { trackingId, interactionType } = params;
+      const { trackingId, interactionType, userId } = params;
 
       // Chaordic event click
       if (interactionType === "SHELF_CLICK") {
@@ -224,24 +230,35 @@ const action = async (
           trackingId,
           apiKey,
           deviceId,
+          userId,
         });
         return null;
       }
 
       // Impulse event click
       const { source: paramsSource, user } = params;
-      await api["GET /engage/search/v3/clicks"]({
-        apiKey,
-        trackingId,
-        source: paramsSource ?? source,
-        userId: user?.id,
-        interactionType,
-        deviceId,
-      });
+      try {
+        await api["GET /engage/search/v3/clicks"]({
+          apiKey,
+          trackingId,
+          source: paramsSource ?? source,
+          userId: userId ?? user?.id,
+          interactionType,
+          deviceId,
+        });
+      } catch {
+        await chaordicApi["GET /v0/click"]({
+          trackingId,
+          apiKey,
+          deviceId,
+          interactionType,
+          userId: userId ?? user?.id,
+        });
+      }
       break;
     }
     case "impression": {
-      const { trackingImpression, firstOffset, lastOffset } = params;
+      const { trackingImpression, firstOffset, lastOffset, userId } = params;
       await chaordicApi["GET /v0/impression"]({
         apiKey,
         origin,
@@ -249,6 +266,7 @@ const action = async (
         firstOffset,
         lastOffset,
         deviceId,
+        userId: userId,
       });
       break;
     }

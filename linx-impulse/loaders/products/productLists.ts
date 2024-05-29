@@ -1,4 +1,5 @@
 import type {
+  Person,
   ProductDetailsPage,
   ProductListingPage,
 } from "../../../commerce/types.ts";
@@ -23,6 +24,17 @@ interface BaseProps {
   page: PageName;
   showDummyProducts?: boolean;
   showOnlyAvailable?: boolean;
+
+  /**
+   * @hide
+   */
+  userId?: string;
+
+  /**
+   * @title User
+   * @description Used to sync user data with linx impulse
+   */
+  user: Person | null;
 }
 
 /**
@@ -115,19 +127,14 @@ const generateParams = (
       };
     }
     case "category": {
-      if (props.categoryIds?.length) {
-        return {
-          name: "category",
-          "categoryId[]": props.categoryIds,
-        };
-      }
-
+      const categoryIds = props.categoryIds ??
+        props.loader?.breadcrumb.itemListElement.map((item) => item.name!);
       // use breadcrumb entries as categoryIds
-      if (props.loader?.breadcrumb.itemListElement.length) {
+
+      if (categoryIds) {
         return {
-          name: "category",
-          "categoryId[]": props.loader.breadcrumb.itemListElement
-            .map((item) => item.name!),
+          name: categoryIds.length > 1 ? "subcategory" : "category",
+          "categoryId[]": categoryIds,
         };
       }
 
@@ -160,6 +167,13 @@ const generateParams = (
         .map((p) => p.productID)
         .filter(nonNullable) ??
         [];
+
+      if (!productIds?.length) {
+        return {
+          name: "emptysearch",
+        };
+      }
+
       return {
         name: "search",
         "productId[]": productIds,
@@ -210,7 +224,7 @@ const loader = async (
     return null;
   }
 
-  const { showOnlyAvailable } = props;
+  const { showOnlyAvailable, userId: _userId, user } = props;
   const { chaordicApi, apiKey, salesChannel, origin, cdn } = ctx;
   const deviceId = getDeviceIdFromBag(ctx);
   const source = getSource(ctx);
@@ -219,6 +233,7 @@ const loader = async (
   const dummy = url.searchParams.get("dummy") || undefined;
 
   const params = generateParams(props, req);
+  const userId = _userId ?? user?.["@id"];
   const headers = new Headers();
   if (origin) {
     headers.set("Origin", origin);
@@ -232,6 +247,7 @@ const loader = async (
       source,
       salesChannel,
       showOnlyAvailable,
+      userId,
       productFormat: "complete",
       dummy: props.showDummyProducts || (dummy === "true" || dummy === "1")
         ? true
