@@ -204,8 +204,9 @@ const loader = async (
   const invalidSegmentIndex = allPageTypes.findIndex((pg) =>
     pg.pageType === "NotFound"
   );
-  const invalidSegment =
-    maybeTerm.split("/").filter(Boolean)[invalidSegmentIndex];
+  const invalidSegment = pageType.pageType === "NotFound"
+    ? maybeTerm.split("/").filter(Boolean)[invalidSegmentIndex]
+    : undefined;
 
   const missingParams = typeof maybeMap !== "string" || !maybeTerm;
   const [map, term] = missingParams && fq.length > 0
