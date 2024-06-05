@@ -6,6 +6,7 @@ import type {
 import type { AppContext } from "../../mod.ts";
 import { getDeviceIdFromBag } from "../../utils/deviceId.ts";
 import getSource from "../../utils/source.ts";
+import { logger } from "deco/observability/otel/config.ts";
 import {
   getTrackingImpressionFromImpressionUrl,
   toProduct,
@@ -243,6 +244,9 @@ const loader = async (
   if (origin) {
     headers.set("Origin", origin);
   }
+
+  ctx.monitoring?.logger?.debug(`recommendations in page '${params.name}'`);
+  logger.debug(`*recommendations in page '${params.name}'`);
 
   console.log({params})
 
