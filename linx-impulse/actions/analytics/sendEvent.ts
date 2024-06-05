@@ -107,6 +107,15 @@ interface ImpressionEvent {
   };
 }
 
+const isChaordicTrackingId = (trackingId: string) => {
+  try {
+    JSON.parse(atob(trackingId));
+    return false
+  } catch {
+    return true
+  }
+}
+
 /**
  * @docs https://docs.linximpulse.com/api/events/getting-started
  */
@@ -224,8 +233,14 @@ const action = async (
     case "click": {
       const { trackingId, interactionType, userId } = params;
 
+      const isChaordic = isChaordicTrackingId(trackingId)
+
       // Chaordic event click
       if (interactionType === "SHELF_CLICK") {
+        if (!isChaordic) {
+          return null;
+        }
+
         await chaordicApi["GET /v0/click"]({
           trackingId,
           apiKey,
@@ -237,7 +252,7 @@ const action = async (
 
       // Impulse event click
       const { source: paramsSource, user } = params;
-      try {
+      if (!isChaordic) {
         await api["GET /engage/search/v3/clicks"]({
           apiKey,
           trackingId,
@@ -246,13 +261,13 @@ const action = async (
           interactionType,
           deviceId,
         });
-      } catch {
+      } else {
         await chaordicApi["GET /v0/click"]({
-          trackingId,
           apiKey,
-          deviceId,
-          interactionType,
+          trackingId,
           userId: userId ?? user?.id,
+          interactionType,
+          deviceId,
         });
       }
       break;
