@@ -164,7 +164,10 @@ const generateParams = (
     }
     case "search": {
       const productIds = props.productIds ?? props.loader?.products
-        .map((p) => p.productID)
+        .map((p) =>
+          p.isVariantOf?.productGroupID ??
+            p.productID
+        )
         .filter(nonNullable) ??
         [];
 
@@ -180,7 +183,9 @@ const generateParams = (
       };
     }
     case "product": {
-      const productId = props.productId ?? props.loader?.product.productID;
+      const productId = props.productId ??
+        props.loader?.product.isVariantOf?.productGroupID ??
+        props.loader?.product.productID;
       return {
         name: "product",
         "productId[]": productId ? [productId] : [],
@@ -238,6 +243,8 @@ const loader = async (
   if (origin) {
     headers.set("Origin", origin);
   }
+
+  console.log({params})
 
   const { top, middle, bottom } = await chaordicApi
     ["GET /v0/pages/recommendations"]({

@@ -6,6 +6,7 @@ export type Feature =
   | "New4You"
   | "Push"
   | "HistoryPersonalized"
+  | "ViewPersonalized"
   | "SimilarItems";
 
 export type PageName =
