@@ -36,6 +36,7 @@ export interface ChaordicAPI {
       lastOffset: number;
       deviceId: string;
       userId?: string;
+      source?: Source;
     };
   };
   "GET /v0/click": {
@@ -46,6 +47,7 @@ export interface ChaordicAPI {
       deviceId: string;
       interactionType?: string;
       userId?: string;
+      source?: Source;
     };
   };
 }
