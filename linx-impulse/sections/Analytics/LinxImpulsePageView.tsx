@@ -5,7 +5,7 @@ import {
   ProductDetailsPage,
   ProductListingPage,
 } from "../../../commerce/types.ts";
-import { scriptAsDataURI } from "../../../utils/dataURI.ts";
+import { useScriptAsDataURI } from "../../../utils/useScript.ts";
 import { AppContext } from "../../mod.ts";
 import getSource from "../../utils/source.ts";
 import type { LinxUser } from "../../utils/types/analytics.ts";
@@ -118,6 +118,7 @@ interface UserProfile {
 
 interface SendViewEventParams {
   page: Page | string;
+  // deno-lint-ignore no-explicit-any
   body?: Record<string, any>;
 }
 
@@ -372,7 +373,7 @@ export default function LinxImpulsePageView(
 ) {
   return (
     <div>
-      <script defer src={scriptAsDataURI(script, props)} />
+      <script defer src={useScriptAsDataURI(script, props)} />
       <span class="hidden">
         {!!props.user?.email && "user ok"}
         {"details" in props.event && props.event.details?.product?.productID}
