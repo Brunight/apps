@@ -248,7 +248,7 @@ const loader = async (
   ctx.monitoring?.logger?.debug(`recommendations in page '${params.name}'`);
   logger.debug(`*recommendations in page '${params.name}'`);
 
-  console.log({params})
+  console.log({ params });
 
   const { top, middle, bottom } = await chaordicApi
     ["GET /v0/pages/recommendations"]({

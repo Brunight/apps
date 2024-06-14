@@ -110,11 +110,11 @@ interface ImpressionEvent {
 const isChaordicTrackingId = (trackingId: string) => {
   try {
     JSON.parse(atob(trackingId));
-    return false
+    return false;
   } catch {
-    return true
+    return true;
   }
-}
+};
 
 /**
  * @docs https://docs.linximpulse.com/api/events/getting-started
@@ -233,9 +233,9 @@ const action = async (
     case "click": {
       const { trackingId, interactionType, userId } = params;
 
-      const isChaordic = isChaordicTrackingId(trackingId)
+      const isChaordic = isChaordicTrackingId(trackingId);
 
-      console.log({source})
+      console.log({ source });
       // Chaordic event click
       if (interactionType === "SHELF_CLICK") {
         if (!isChaordic) {
@@ -277,7 +277,7 @@ const action = async (
       break;
     }
     case "impression": {
-      console.log({source})
+      console.log({ source });
       const { trackingImpression, firstOffset, lastOffset, userId } = params;
       await chaordicApi["GET /v0/impression"]({
         apiKey,
