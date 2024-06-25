@@ -5,7 +5,7 @@ import {
   ProductDetailsPage,
   ProductListingPage,
 } from "../../../commerce/types.ts";
-import { useScriptAsDataURI } from "../../../utils/useScript.ts";
+import { useScriptAsDataURI } from "deco/hooks/useScript.ts";
 import { AppContext } from "../../mod.ts";
 import getSource from "../../utils/source.ts";
 import type { LinxUser } from "../../utils/types/analytics.ts";
