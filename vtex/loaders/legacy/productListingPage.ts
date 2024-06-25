@@ -1,3 +1,4 @@
+import { LegacyItem } from "../../utils/types.ts";
 import type { Filter, ProductListingPage } from "../../../commerce/types.ts";
 import { STALE } from "../../../utils/fetch.ts";
 import { AppContext } from "../../mod.ts";
@@ -132,6 +133,10 @@ const getTerm = (path: string, map: string) => {
   }
 
   return term;
+};
+
+const getFirstItemAvailable = (item: LegacyItem) => {
+  return !!item?.sellers?.find((s) => s.commertialOffer?.AvailableQuantity > 0);
 };
 
 /**
@@ -273,10 +278,15 @@ const loader = async (
   const products = await Promise.all(
     vtexProducts
       .map((p) =>
-        toProduct(p, p.items[0], 0, {
-          baseUrl,
-          priceCurrency: segment?.payload?.currencyCode ?? "BRL",
-        })
+        toProduct(
+          p,
+          p.items.find(getFirstItemAvailable) ?? p.items[0],
+          0,
+          {
+            baseUrl,
+            priceCurrency: segment?.payload?.currencyCode ?? "BRL",
+          },
+        )
       )
       .map(
         (
