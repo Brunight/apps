@@ -47,6 +47,30 @@ export interface Props {
 
 export interface MapLocation {
   /**
+   * @title City
+   * @example São Paulo
+   */
+  city?: string;
+  /**
+   * @title Region Code
+   * @example SP
+   */
+  regionCode?: string;
+  /**
+   * @title Country
+   * @example BR
+   */
+  country?: string;
+
+  /**
+   * @title Area selection
+   * @example -7.27820,-35.97630,2000
+   */
+  coordinates?: MapWidget;
+}
+
+export interface MapLocation {
+  /**
      * @title City
      * @example São Paulo
      */
@@ -71,8 +95,7 @@ export interface MapLocation {
 
 
 const matchLocation =
-  (defaultNotMatched = true, source: MapLocation) =>
-  (target: MapLocation) => {
+  (defaultNotMatched = true, source: MapLocation) => (target: MapLocation) => {
     if (
       !target.regionCode &&
       !target.city &&
@@ -83,8 +106,7 @@ const matchLocation =
     }
 
     let result = !target.regionCode || target.regionCode === source.regionCode;
-    result &&=
-      !source.coordinates ||
+    result &&= !source.coordinates ||
       !target.coordinates ||
       haversine(source.coordinates, target.coordinates) <=
         Number(target.coordinates.split(",")[2]);
@@ -125,7 +147,7 @@ export default function MatchLocation(
   const userLocation = { city, country, regionCode, coordinates };
   const isLocationExcluded =
     excludeLocations?.some(matchLocation(false, escaped(userLocation))) ??
-    false;
+      false;
   if (isLocationExcluded) {
     return false;
   }
