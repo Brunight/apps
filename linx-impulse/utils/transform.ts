@@ -597,8 +597,8 @@ export const fixSuggestionLink = (link: string) => {
   const search = new URLSearchParams();
   // ["apikey", "resultsperpage"].forEach((key) => url.searchParams.delete(key))
 
-  const terms = url.searchParams.get("terms");
-  terms && search.set("terms", terms);
+  const q = url.searchParams.get("q") ?? url.searchParams.get("terms");
+  q && search.set("q", q);
   const origin = url.searchParams.get("origin");
   origin && search.set("origin", origin);
   const filter = url.searchParams.get("filter");
