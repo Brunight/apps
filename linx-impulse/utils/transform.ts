@@ -601,8 +601,8 @@ export const fixSuggestionLink = (link: string) => {
   q && search.set("q", q);
   const origin = url.searchParams.get("origin");
   origin && search.set("origin", origin);
-  const filter = url.searchParams.get("filter");
-  filter && search.set("filter", filter);
+  const filter = url.searchParams.getAll("filter");
+  filter.forEach((f) => search.append("filter", f));
 
   return `/lxsearch?${search.toString()}`;
 };
