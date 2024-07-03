@@ -533,6 +533,7 @@ export const toProductListingPage = (
   const searchId = response?.searchId;
 
   const searchIdAsPageType = searchId
+    // deno-lint-ignore no-explicit-any
     ? `SearchId:${searchId}` as any
     : undefined;
 
@@ -589,6 +590,21 @@ export const toProductListingPage = (
     },
     filters: response.filters.map((f) => toFilter(f, new URL(url))) ?? [],
   };
+};
+
+export const fixSuggestionLink = (link: string) => {
+  const url = new URL(link, "http://example.com");
+  const search = new URLSearchParams();
+  // ["apikey", "resultsperpage"].forEach((key) => url.searchParams.delete(key))
+
+  const terms = url.searchParams.get("terms");
+  terms && search.set("terms", terms);
+  const origin = url.searchParams.get("origin");
+  origin && search.set("origin", origin);
+  const filter = url.searchParams.get("filter");
+  filter && search.set("filter", filter);
+
+  return `/lxsearch?${search.toString()}`;
 };
 
 export const getTrackingImpressionFromImpressionUrl = (url: string) =>
