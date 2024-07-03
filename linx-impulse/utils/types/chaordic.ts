@@ -88,7 +88,7 @@ export interface ChaordicSku {
   sku: string;
   specs: Specs;
   stock: number;
-  customBusicess?: Record<string, unknown>;
+  customBusiness?: Record<string, unknown>;
 }
 
 export interface ChaordicProduct {
@@ -106,4 +106,5 @@ export interface ChaordicProduct {
   details: Record<string, string | number>;
   skus: ChaordicSku[];
   trackingUrl: string;
+  businessInfo?: Record<string, unknown>;
 }

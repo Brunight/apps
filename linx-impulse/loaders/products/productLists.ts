@@ -10,6 +10,7 @@ import { logger } from "deco/observability/otel/config.ts";
 import {
   getTrackingImpressionFromImpressionUrl,
   toProduct,
+  toPropertyValue,
 } from "../../utils/transform.ts";
 import type {
   PageName,
@@ -213,7 +214,16 @@ function toLinxImpulseShelf(
     position,
     feature: shelf.feature,
     products: shelf.displays[0].recommendations.map(
-      (p) => toProduct(p, origin, cdn),
+      (p) => {
+        const shelfTitle = shelf.title;
+        const parsed = toProduct(p, origin, cdn);
+        parsed.isVariantOf?.additionalProperty?.push(toPropertyValue({
+          name: "shelfTitle",
+          value: shelfTitle,
+        }));
+
+        return parsed;
+      },
     ),
   };
 }

@@ -150,7 +150,7 @@ const toProductUrl = (
   return `${origin}${productURL.pathname}${productURL.search}`;
 };
 
-const toPropertyValue = (
+export const toPropertyValue = (
   value: Partial<Omit<PropertyValue, "@type">>,
 ): PropertyValue => ({
   "@type": "PropertyValue",
@@ -209,6 +209,9 @@ const productFromImpulse = (
     ...Object.entries(variant.properties?.details ?? {})?.map((
       [key, value],
     ) => toPropertyValue({ name: key, value: sanitizeValue(value) })),
+    ...Object.entries(variant.specs ?? {})?.map((
+      [key, value],
+    ) => toPropertyValue({ name: key, value: sanitizeValue(value) })),
     ...product.categories.map((c) =>
       toPropertyValue({
         name: "category",
@@ -216,10 +219,16 @@ const productFromImpulse = (
         propertyID: c.id,
       })
     ),
-    ...(level >= 1 ? isVariantOfAdditionalProperty : [toPropertyValue({
-      name: "trackingId",
-      value: trackingId ?? undefined,
-    })]),
+    // ...(level >= 1 ? isVariantOfAdditionalProperty : [toPropertyValue({
+    //   name: "trackingId",
+    //   value: trackingId ?? undefined,
+    // })]),
+    ...(level === 0
+      ? [toPropertyValue({
+        name: "trackingId",
+        value: trackingId ?? undefined,
+      })]
+      : []),
   ];
 
   const hasVariant = level < 1
@@ -291,6 +300,8 @@ const productFromChaordic = (
       name: brandName,
     } satisfies Brand
     : undefined;
+  const age = product.businessInfo?.age as number | undefined;
+  const releaseDate = age ? String(new Date().getTime() - age) : undefined;
 
   const offer = toOffer(variant);
   const offers = offer ? [offer] : [];
@@ -372,6 +383,7 @@ const productFromChaordic = (
     category: product.categories.map((c) => c.name).join(">"),
     name: variant?.name ?? product.name,
     brand,
+    releaseDate,
     additionalProperty,
     image,
     isVariantOf,

@@ -71,9 +71,9 @@ export interface MapLocation {
 
 export interface MapLocation {
   /**
-     * @title City
-     * @example São Paulo
-     */
+   * @title City
+   * @example São Paulo
+   */
   city?: string;
   /**
    * @title Region Code
@@ -92,7 +92,6 @@ export interface MapLocation {
    */
   coordinates?: MapWidget;
 }
-
 
 const matchLocation =
   (defaultNotMatched = true, source: MapLocation) => (target: MapLocation) => {
@@ -136,7 +135,7 @@ const escaped = ({
  */
 export default function MatchLocation(
   { includeLocations, excludeLocations }: Props,
-  { request }: MatchContext
+  { request }: MatchContext,
 ) {
   const city = request.headers.get("cf-ipcity") ?? undefined;
   const country = request.headers.get("cf-ipcountry") ?? undefined;
